@@ -1,0 +1,14 @@
+from app import app
+import json
+from .SensorsController import SensorsController
+
+sensors_controller = SensorsController()
+
+@app.route('/')
+@app.route('/index')
+def index():
+    return "Welcome to mysensor API server"
+
+@app.route('/sensors', methods=['GET'])
+def sensors():
+    return json.dumps(sensors_controller.getSensors())
