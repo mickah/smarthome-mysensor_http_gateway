@@ -15,7 +15,7 @@ class SensorsController:
             print("MYSENSOR_SERIAL env variable missing!")
         else:
             print("Using serial port: "+str(os.environ['MYSENSOR_SERIAL']))
-        self.gateway = mysensors.SerialGateway(os.environ['MYSENSOR_SERIAL'], event)
+        self.gateway = mysensors.SerialGateway(os.environ['MYSENSOR_SERIAL'], baud=115200,  event_callback=event, persistence=True,  persistence_file='./mysensors.pickle', protocol_version='2.2')
         self.gateway.start_persistence()
         self.gateway.start()
         #self.sensors_tests = [{"sensor_id":6,"type":16,"children":[{"id":2,"type":"S_HUM","values":[{"V_HUM":60}]}]}]

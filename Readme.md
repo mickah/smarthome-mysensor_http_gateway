@@ -13,18 +13,38 @@ The configuration is done through environment variables:
 ## Install with virtual env
 ```bash
 apt install python3-venv
-source env/bin/activate
 python3 -m venv env
 source env/bin/activate
 # Dependency
-pip3 install pyrequirement.txt
+pip3 install -r requirement.txt
 ```
 
 ## Run server (not prod ready)
 ```
-flask run
+LANG=C.UTF-8 MYSENSOR_SERIAL=/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_00000000-if00-port0 flask run
+```
+
+## Use docker for developpement
+```
+./scripts/start_dev.sh
+python3 -m venv env
+source env/bin/activate
+# Dependency
+pip3 install -r requirement.txt
 ```
 
 ## Next steps
 - Run as service instructions
 - Store all sensors data into a distant mongodb database
+
+
+# Annexes 
+## Setup udev rule for non root serial permission read/write
+'/etc/udev/rules.d/99-serial.rules'
+KERNEL=="ttyUSB[0-9]*",MODE="0666"
+
+## Mount dev, and previlegied
+`-v /dev:/dev --privileged`
+
+## use /dev/serial/by-id
+

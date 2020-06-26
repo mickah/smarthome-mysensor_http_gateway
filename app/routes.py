@@ -11,4 +11,5 @@ def index():
 
 @app.route('/sensors', methods=['GET'])
 def sensors():
-    return json.dumps(sensors_controller.getSensors())
+    print(sensors_controller.getSensors())
+    return json.dumps(list(sensors_controller.getSensors()))
