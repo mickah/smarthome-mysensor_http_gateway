@@ -1,0 +1,57 @@
+# Start the mysensors http gatway and the mongodb database
+#
+# Usefull commands:
+# Login to mongo
+# mongo -u <your username> -p <your password> --authenticationDatabase <your database name>
+
+version: "3"
+services:
+  mysensor_flask:
+    build:
+      context: ./
+      dockerfile: dockerfiles/dockerfile-flask
+    container_name: mysensor_flask
+    image: digitalocean.com/flask-python:3.6
+    restart: unless-stopped
+    privileged: true
+    environment:
+      APP_ENV: "prod"
+      APP_DEBUG: "False"
+      APP_PORT: 5000
+      MYSENSOR_SERIAL: "${MYSENSOR_SERIAL}"
+      MONGODB_DATABASE: "${MONGO_INITDB_DATABASE}"
+      MONGODB_USERNAME: "${MONGO_INITDB_ROOT_USERNAME}"
+      MONGODB_PASSWORD: "${MONGO_INITDB_ROOT_PASSWORD}"
+      MONGODB_HOSTNAME: mysensors_mongo_db
+    volumes:
+      - ./:/app
+      - /dev:/dev
+    depends_on:
+      - mysensors_mongo_db
+    networks:
+      - backend
+    ports:
+      - "${SERVER_PORT}:5000"
+
+  mysensors_mongo_db:
+    image: mongo:4.2
+    container_name: mysensors_mongo_db
+    restart: unless-stopped
+    command: mongod --auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "${MONGO_INITDB_ROOT_USERNAME}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_INITDB_ROOT_PASSWORD}"
+      MONGO_INITDB_DATABASE: "${MONGO_INITDB_DATABASE}"
+      MONGODB_DATA_DIR: "/data/db"
+      MONDODB_LOG_DIR: "${MONDODB_LOG_DIR}"
+    volumes:
+      - ${MONGODB_DATA_DIR}:/data/db
+      # - ./dockerfiles/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
+    networks:
+      - backend
+    ports:
+      - "27017-27019:27017-27019"
+
+networks:
+  backend:
+    driver: bridge

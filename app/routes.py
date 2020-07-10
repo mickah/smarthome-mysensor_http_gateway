@@ -16,6 +16,7 @@ def index():
 @app.route("/sensors", methods=["GET"])
 def sensors():
     # List all sensors as JSON
+    node_json = None
     sensors_json = {}
     for node in sensors_controller.getSensors():
         child_list = []
@@ -40,8 +41,30 @@ def sensors():
             "children": child_list,
         }
         sensors_json[node.sensor_id] = node_json
+    if node_json is not None:
+        resp = Response(
+            response=json.dumps(node_json), status=200, mimetype="application/json"
+        )
+        return resp
+    else:
+        resp = Response(
+            response=json.dumps({}), status=503, mimetype="application/json"
+        )
+        return resp
 
-    resp = Response(
-        response=json.dumps(node_json), status=200, mimetype="application/json"
-    )
-    return resp
+
+@app.route("/sensors/id/<sensor_id>/<child_id>", methods=["GET"])
+def sensors_data(sensor_id, child_id):
+    # List all sensors as JSON
+    data = sensors_controller.getSensorsRecordedValues(int(sensor_id), int(child_id))
+
+    if data is not None:
+        resp = Response(
+            response=json.dumps(data), status=200, mimetype="application/json"
+        )
+        return resp
+    else:
+        resp = Response(
+            response=json.dumps({}), status=503, mimetype="application/json"
+        )
+        return resp

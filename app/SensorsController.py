@@ -2,6 +2,7 @@ import mysensors.mysensors as mysensors
 import json
 import os
 from datetime import datetime, timezone
+import pymongo
 
 
 class SensorsController:
@@ -26,7 +27,12 @@ class SensorsController:
         self.gateway.start_persistence()
         self.gateway.start()
 
+        self.mongodb_client = None
+        self.mongodb_database = None
+        self.mongodb_collection = None
+
     def getSensors(self):
+        self.getSensorsRecordedValues([[35, 3]])
         return self.gateway.sensors.values()
 
     def event(self, message):
@@ -85,5 +91,76 @@ class SensorsController:
 
             if message.type == 1:
                 print("sensor_updated: {}".format(json.dumps(child_json)))
+                db_interface = self.getDBInterface()
+                if db_interface is not None:
+                    try:
+                        child_json["date" : datetime.now()]
+                        x = db_interface.insert_one(child_json)
+                    except Exception as e:
+                        print("Could not connect to database: %s" % e)
+
             elif message.type == 2:
                 print("sensor_request: {}".format(json.dumps(child_json)))
+
+    def getSensorsRecordedValues(self, node_id, child_id):
+        db_interface = self.getDBInterface()
+        output = {"node_id": node_id, "child_id": child_id, "data": {}}
+
+        if db_interface is not None:
+            request = {
+                "node_id": node_id,
+                "child_id": child_id,
+            }
+            query_result = db_interface.find(
+                request, {"node_id": 0, "child_id": 0}
+            ).sort("date")
+            for elem in query_result:
+                if elem["data_type"] not in output["data"]:
+                    output["data"][elem["data_type"]] = {"x": [], "y": []}
+                output["data"][elem["data_type"]]["x"].append(elem["date"].isoformat())
+                output["data"][elem["data_type"]]["y"].append(elem["payload"])
+            return output
+        else:
+            return {}
+
+    def getDBInterface(self):
+        if self.mongodb_collection is None:
+            self.setup_db_connection()
+        return self.mongodb_collection
+
+    def setup_db_connection(self):
+        mongo_hostname = os.environ.get("MONGODB_HOSTNAME")
+        if mongo_hostname is not None and len(mongo_hostname) > 0:
+            database = os.environ.get("MONGODB_DATABASE")
+            username = os.environ.get("MONGODB_USERNAME")
+            password = os.environ.get("MONGODB_PASSWORD")
+            self.mongodb_client = pymongo.MongoClient(
+                "mongodb://" + mongo_hostname + ":27017/",
+                username=username,
+                password=password,
+            )
+            self.mongodb_database = self.mongodb_client[database]
+            self.mongodb_collection = self.mongodb_database["sensors_data"]
+            print("Connected to mongodb :)")
+            return True
+        else:
+            return False
+
+    def __test_feed_dummy_data(self):
+        child_json = {
+            "node_id": 35,
+            "child_id": 3,
+            "child_type": 4,
+            "data_type": 4,
+            "payload": 5.2,
+        }
+        child_json["date"] = datetime.now()
+
+        print("test inserting : {}".format(child_json))
+        db_interface = self.getDBInterface()
+        if db_interface is not None:
+            try:
+                x = db_interface.insert_one(child_json)
+                print("test inserted")
+            except Exception as e:
+                print("Could not connect to database: %s" % e)
