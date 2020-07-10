@@ -32,7 +32,6 @@ class SensorsController:
         self.mongodb_collection = None
 
     def getSensors(self):
-        self.getSensorsRecordedValues([[35, 3]])
         return self.gateway.sensors.values()
 
     def event(self, message):
