@@ -41,6 +41,11 @@ class SensorsController:
         is_valid_node = self.gateway and message.node_id != 0
 
         if is_valid_node:
+
+            stamp = datetime.now()
+            if elem["node_id"] not in self.live_stamping:
+                self.live_stamping[elem["node_id"]] = {last_seen: stamp}
+
             is_child_update_or_req = (
                 message.child_id != 255
                 and message.type in [1, 2]
@@ -48,10 +53,6 @@ class SensorsController:
             )
             if is_child_update_or_req:
                 child = self.gateway.sensors[message.node_id].children[message.child_id]
-
-                stamp = datetime.now()
-                if elem["node_id"] not in self.live_stamping:
-                    self.live_stamping[elem["node_id"]] = {last_seen: stamp}
 
                 if message.sub_type in [
                     0,
