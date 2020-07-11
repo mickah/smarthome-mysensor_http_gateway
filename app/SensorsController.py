@@ -43,8 +43,8 @@ class SensorsController:
         if is_valid_node:
 
             stamp = datetime.now()
-            if elem["node_id"] not in self.live_stamping:
-                self.live_stamping[elem["node_id"]] = {last_seen: stamp}
+            if message.node_id not in self.live_stamping:
+                self.live_stamping[message.node_id] = {last_seen: stamp}
 
             is_child_update_or_req = (
                 message.child_id != 255
@@ -101,20 +101,20 @@ class SensorsController:
                     print("sensor_updated: {}".format(json.dumps(child_json)))
                     stamp = datetime.now()
 
-                    if elem["child_id"] not in self.live_stamping[elem["node_id"]]:
-                        self.live_stamping[elem["node_id"]][elem["child_id"]] = {
-                            elem["child_type"]: stamp
+                    if message.child_id not in self.live_stamping[message.node_id]:
+                        self.live_stamping[message.node_id][message.child_id] = {
+                            child.type: stamp
                         }
 
                     else:
-                        self.live_stamping[elem["node_id"]][elem["child_id"]][
-                            elem["child_type"]
+                        self.live_stamping[message.node_id][message.child_id][
+                            child.type
                         ] = stamp
 
                     db_interface = self.getDBInterface()
                     if db_interface is not None:
                         try:
-                            child_json["date" : datetime.now()]
+                            child_json["date"] = datetime.now()
                             x = db_interface.insert_one(child_json)
                         except Exception as e:
                             print("Could not connect to database: %s" % e)
