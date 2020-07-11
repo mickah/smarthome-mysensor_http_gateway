@@ -28,7 +28,7 @@ def sensors():
                     "child_type": child.type,
                     "description": child.description,
                     "values": child.values,
-                    "stamp": sensors_controller.getLiveStampStr(
+                    "last_seen": sensors_controller.getLiveChildStampStr(
                         node.sensor_id, ch_id, child.type
                     ),
                 }
@@ -42,6 +42,7 @@ def sensors():
             "heartbeat": node.heartbeat,
             "protocol_version": node.protocol_version,
             "children": child_list,
+            "last_seen": sensors_controller.getLiveNodeStampStr(node.sensor_id),
         }
         sensors_json[node.sensor_id] = node_json
     if node_json is not None:
