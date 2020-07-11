@@ -28,6 +28,9 @@ def sensors():
                     "child_type": child.type,
                     "description": child.description,
                     "values": child.values,
+                    "stamp": sensors_controller.getLiveStampStr(
+                        node.sensor_id, ch_id, child.type
+                    ),
                 }
             )
 

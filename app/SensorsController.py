@@ -15,6 +15,7 @@ class SensorsController:
         else:
             print("Using serial port: " + str(os.environ["MYSENSOR_SERIAL"]))
 
+        self.live_stamping = {}
         self.gateway = None
         self.gateway = mysensors.SerialGateway(
             os.environ["MYSENSOR_SERIAL"],
@@ -90,6 +91,21 @@ class SensorsController:
 
             if message.type == 1:
                 print("sensor_updated: {}".format(json.dumps(child_json)))
+                stamp = datetime.now()
+                if elem["node_id"] not in self.live_stamping:
+                    self.live_stamping[elem["node_id"]] = {
+                        elem["child_id"]: {elem["child_type"]: stamp}
+                    }
+                elif elem["child_id"] not in self.live_stamping[elem["node_id"]]:
+                    self.live_stamping[elem["node_id"]][elem["child_id"]] = {
+                        elem["child_type"]: stamp
+                    }
+
+                else:
+                    self.live_stamping[elem["node_id"]][elem["child_id"]][
+                        elem["child_type"]
+                    ] = stamp
+
                 db_interface = self.getDBInterface()
                 if db_interface is not None:
                     try:
@@ -100,6 +116,23 @@ class SensorsController:
 
             elif message.type == 2:
                 print("sensor_request: {}".format(json.dumps(child_json)))
+
+    def getLiveStamp(self, node_id, child_id, data_type):
+        if (
+            node_id not in self.live_stamping
+            or child_id not in self.live_stamping[node_id]
+            or data_type not in self.live_stamping[node_id][child_id]
+        ):
+            return None
+        else:
+            return self.live_stamping[node_id][child_id][data_type]
+
+    def getLiveStampStr(self, node_id, child_id, data_type):
+        stamp = self.getLiveStamp(node_id, child_id, data_type)
+        if stamp is not None:
+            return stamp.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            return None
 
     def getSensorsRecordedValues(self, node_id, child_id):
         db_interface = self.getDBInterface()
