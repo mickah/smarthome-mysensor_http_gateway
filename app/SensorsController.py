@@ -38,13 +38,14 @@ class SensorsController:
     def event(self, message):
         """Callback for mysensors updates"""
 
-        is_valid_node = self.gateway and message.node_id != 0
+        print(message)
+        is_valid_node = self.gateway
 
         if is_valid_node:
 
             stamp = datetime.now()
             if message.node_id not in self.live_stamping:
-                self.live_stamping[message.node_id] = {last_seen: stamp}
+                self.live_stamping[message.node_id] = {"last_seen": stamp}
 
             is_child_update_or_req = (
                 message.child_id != 255
