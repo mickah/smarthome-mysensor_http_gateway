@@ -45,9 +45,9 @@ def sensors():
             "last_seen": sensors_controller.getLiveNodeStampStr(node.sensor_id),
         }
         sensors_json[node.sensor_id] = node_json
-    if node_json is not None:
+    if sensors_json is not None:
         resp = Response(
-            response=json.dumps(node_json), status=200, mimetype="application/json"
+            response=json.dumps(sensors_json), status=200, mimetype="application/json"
         )
         return resp
     else:
