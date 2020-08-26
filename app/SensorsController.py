@@ -46,6 +46,8 @@ class SensorsController:
             stamp = datetime.now()
             if message.node_id not in self.live_stamping:
                 self.live_stamping[message.node_id] = {"last_seen": stamp}
+            else:
+                self.live_stamping[message.node_id]["last_seen"] = stamp
 
             is_child_update_or_req = (
                 message.child_id != 255
@@ -106,7 +108,6 @@ class SensorsController:
                         self.live_stamping[message.node_id][message.child_id] = {
                             child.type: stamp
                         }
-
                     else:
                         self.live_stamping[message.node_id][message.child_id][
                             child.type
