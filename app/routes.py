@@ -17,34 +17,8 @@ def index():
 def sensors():
     # List all sensors as JSON
     node_json = None
-    sensors_json = {}
-    for node in sensors_controller.getSensors():
-        child_list = []
-        for ch_id in node.children:
-            child = node.children[ch_id]
-            child_list.append(
-                {
-                    "child_id": ch_id,
-                    "child_type": child.type,
-                    "description": child.description,
-                    "values": child.values,
-                    "last_seen": sensors_controller.getLiveChildStampStr(
-                        node.sensor_id, ch_id, child.type
-                    ),
-                }
-            )
-
-        node_json = {
-            "sensor_id": node.sensor_id,
-            "sketch_name": node.sketch_name,
-            "sketch_version": node.sketch_version,
-            "battery_level": node.battery_level,
-            "heartbeat": node.heartbeat,
-            "protocol_version": node.protocol_version,
-            "children": child_list,
-            "last_seen": sensors_controller.getLiveNodeStampStr(node.sensor_id),
-        }
-        sensors_json[node.sensor_id] = node_json
+    sensors_json = sensors_controller.getSensors()
+ 
     if sensors_json is not None:
         resp = Response(
             response=json.dumps(sensors_json), status=200, mimetype="application/json"

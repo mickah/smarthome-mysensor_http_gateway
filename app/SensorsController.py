@@ -3,6 +3,9 @@ import json
 import os
 from datetime import datetime, timezone
 import pymongo
+import pickle
+
+from .LiveStamping import LiveStamping
 
 
 class SensorsController:
@@ -15,7 +18,7 @@ class SensorsController:
         else:
             print("Using serial port: " + str(os.environ["MYSENSOR_SERIAL"]))
 
-        self.live_stamping = {}
+        self.live_stamping = LiveStamping()
         self.gateway = None
         self.gateway = mysensors.SerialGateway(
             os.environ["MYSENSOR_SERIAL"],
@@ -32,7 +35,7 @@ class SensorsController:
         self.mongodb_database = None
         self.mongodb_collection = None
 
-    def getSensors(self):
+    def getSensorsRaw(self):
         return self.gateway.sensors.values()
 
     def event(self, message):
@@ -42,13 +45,8 @@ class SensorsController:
         is_valid_node = self.gateway
 
         if is_valid_node:
-
-            stamp = datetime.now()
-            if message.node_id not in self.live_stamping:
-                self.live_stamping[message.node_id] = {"last_seen": stamp}
-            else:
-                self.live_stamping[message.node_id]["last_seen"] = stamp
-
+            self.live_stamping.updateNodeStamp(message.node_id)
+            
             is_child_update_or_req = (
                 message.child_id != 255
                 and message.type in [1, 2]
@@ -102,16 +100,7 @@ class SensorsController:
 
                 if message.type == 1:
                     print("sensor_updated: {}".format(json.dumps(child_json)))
-                    stamp = datetime.now()
-
-                    if message.child_id not in self.live_stamping[message.node_id]:
-                        self.live_stamping[message.node_id][message.child_id] = {
-                            child.type: stamp
-                        }
-                    else:
-                        self.live_stamping[message.node_id][message.child_id][
-                            child.type
-                        ] = stamp
+                    self.live_stamping.updateChildStamp(message.node_id, message.child_id, child.type)
 
                     db_interface = self.getDBInterface()
                     if db_interface is not None:
@@ -123,36 +112,6 @@ class SensorsController:
 
                 elif message.type == 2:
                     print("sensor_request: {}".format(json.dumps(child_json)))
-
-    def getLiveNodeStamp(self, node_id):
-        if node_id not in self.live_stamping:
-            return None
-        else:
-            return self.live_stamping[node_id]["last_seen"]
-
-    def getLiveChildStamp(self, node_id, child_id, data_type):
-        if (
-            node_id not in self.live_stamping
-            or child_id not in self.live_stamping[node_id]
-            or data_type not in self.live_stamping[node_id][child_id]
-        ):
-            return None
-        else:
-            return self.live_stamping[node_id][child_id][data_type]
-
-    def getLiveNodeStampStr(self, node_id):
-        stamp = self.getLiveNodeStamp(node_id)
-        if stamp is not None:
-            return stamp.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            return None
-
-    def getLiveChildStampStr(self, node_id, child_id, data_type):
-        stamp = self.getLiveChildStamp(node_id, child_id, data_type)
-        if stamp is not None:
-            return stamp.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            return None
 
     def getSensorsRecordedValues(self, node_id, child_id):
         db_interface = self.getDBInterface()
@@ -175,7 +134,42 @@ class SensorsController:
         else:
             return {}
 
+    def getSensors():
+    # List all sensors as JSON
+    node_json = None
+    sensors_json = {}
+    for node in sensors_controller.getSensorsRaw():
+        child_list = []
+        for ch_id in node.children:
+            child = node.children[ch_id]
+            child_list.append(
+                {
+                    "child_id": ch_id,
+                    "child_type": child.type,
+                    "description": child.description,
+                    "values": child.values,
+                    "last_seen": self.live_stamping.getLiveChildStampStr(
+                        node.sensor_id, ch_id, child.type
+                    ),
+                }
+            )
+
+        node_json = {
+            "sensor_id": node.sensor_id,
+            "sketch_name": node.sketch_name,
+            "sketch_version": node.sketch_version,
+            "battery_level": node.battery_level,
+            "heartbeat": node.heartbeat,
+            "protocol_version": node.protocol_version,
+            "children": child_list,
+            "last_seen": self.live_stamping.getLiveNodeStampStr(node.sensor_id),
+        }
+        sensors_json[node.sensor_id] = node_json
+    return sensors_json
+
+
     def getDBInterface(self):
+        if self.sqlconn = sqlite3.connect('example.db')
         if self.mongodb_collection is None:
             self.setup_db_connection()
         return self.mongodb_collection
