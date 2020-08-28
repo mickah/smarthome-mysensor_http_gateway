@@ -27,7 +27,7 @@ class SensorsController:
             persistence_file="./mysensors.pickle",
             protocol_version="2.2",
         )
-        self.gateway.start_persistence()
+        #self.gateway.start_persistence()
         self.gateway.start()
 
         self.mongodb_client = None
@@ -42,9 +42,10 @@ class SensorsController:
         print(message)
         is_valid_node = self.gateway
         stamp = datetime.now()
+        stamp_str = stamp.strftime("%Y-%m-%d %H:%M:%S")
 
         # update node stamp
-        node_update = {"stamp":stamp.strftime("%Y-%m-%d %H:%M:%S")}
+        node_update = {"stamp":stamp_str}
 
         if is_valid_node:
             if message.child_id == 255:
@@ -124,7 +125,7 @@ class SensorsController:
                     print("sensor_updated: {}".format(json.dumps(child_json)))
 
                     # local last value persistence
-                    self.local_persistence.updateChild(message.node_id, message.child_id, child.type, payload, stamp)
+                    self.local_persistence.updateChild(message.node_id, message.child_id, child.type, payload, stamp_str)
 
                     # mongo db persistence
                     db_interface = self.getDBInterface()
