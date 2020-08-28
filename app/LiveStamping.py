@@ -13,7 +13,7 @@ class LiveStamping:
 
     def persist(self, data):
         with open(self.live_stamping_name, 'wb') as file:
-            pickle.dump(file, data)
+            pickle.dump(data, file)
     
     def updateNodeStamp(self, node_id):
         stamp = datetime.now()
@@ -21,10 +21,10 @@ class LiveStamping:
         with open(self.live_stamping_name, 'rb') as file:
             live_stamping_records = pickle.load(file)
             if node_id not in live_stamping_records:
-                live_stamping_records[message.node_id] = {"last_seen": stamp}
+                live_stamping_records[node_id] = {"last_seen": stamp}
             else:
-                live_stamping_records[message.node_id]["last_seen"] = stamp
-        if live_stamping_records not None:
+                live_stamping_records[node_id]["last_seen"] = stamp
+        if live_stamping_records is not None:
             self.persist(live_stamping_records)
 
     def updateChildStamp(self, node_id, child_id, ch_type):
@@ -42,12 +42,13 @@ class LiveStamping:
                     ch_type
                 ] = stamp
 
-        if live_stamping_records not None:
+        if live_stamping_records is not None:
             self.persist(live_stamping_records)
 
     def getLiveNodeStamp(self, node_id):
         with open(self.live_stamping_name, 'rb') as file:
             live_stamping_records = pickle.load(file)
+            #print(live_stamping_records)
             if node_id not in live_stamping_records:
                 return None
             else:

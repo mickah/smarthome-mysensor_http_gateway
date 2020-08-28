@@ -134,11 +134,11 @@ class SensorsController:
         else:
             return {}
 
-    def getSensors():
+    def getSensors(self):
       # List all sensors as JSON
       node_json = None
       sensors_json = {}
-      for node in sensors_controller.getSensorsRaw():
+      for node in self.getSensorsRaw():
         child_list = []
         for ch_id in node.children:
             child = node.children[ch_id]
