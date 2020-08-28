@@ -62,7 +62,7 @@ class SensorsController:
                         node_update["battery_lvl"]=message.payload
 
             # update local persistence node
-            self.local_persistence.updateNode(node_update)
+            self.local_persistence.updateNode(message.node_id, node_update)
 
             is_node_update_or_req = (
                 message.child_id != 255
