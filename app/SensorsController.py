@@ -189,13 +189,13 @@ class SensorsController:
     def getStringPresentation(self, number):
         if number == 6:
             return "S_TEMP"
-        else if number == 7:
+        elif number == 7:
             return "S_HUM"
-        else if number == 17:
+        elif number == 17:
             return "S_ARDUINO_NODE"
-        else if number == 18:
+        elif number == 18:
             return "S_ARDUINO_REPEATER_NODE"
-        else if number == 35:
+        elif number == 35:
             return "S_MOISTURE"
         else:
             return "unknown"    
