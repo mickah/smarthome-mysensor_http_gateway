@@ -49,16 +49,16 @@ class SensorsController:
         if is_valid_node:
             if message.child_id == 255:
                 # Pure node update
-                if message.command == 0:
-                    node_update["type"]=self.getStringPresentation(message.type)
-                if message.command == 3:
-                    if message.type == 11:
+                if message.type == 0:
+                    node_update["type"]=self.getStringPresentation(message.sub_type)
+                if message.type == 3:
+                    if message.sub_type == 11:
                         node_update["sketch_name"]=message.payload
-                    if message.type == 12:
+                    if message.sub_type == 12:
                         node_update["sketch_version"]=message.payload
-                    if message.type == 19:
+                    if message.sub_type == 19:
                         node_update["presentation"]=message.payload
-                    if message.type == 0:
+                    if message.sub_type == 0:
                         node_update["battery_lvl"]=message.payload
 
             # update local persistence node
