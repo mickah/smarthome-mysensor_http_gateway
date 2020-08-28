@@ -135,10 +135,10 @@ class SensorsController:
             return {}
 
     def getSensors():
-    # List all sensors as JSON
-    node_json = None
-    sensors_json = {}
-    for node in sensors_controller.getSensorsRaw():
+      # List all sensors as JSON
+      node_json = None
+      sensors_json = {}
+      for node in sensors_controller.getSensorsRaw():
         child_list = []
         for ch_id in node.children:
             child = node.children[ch_id]
@@ -165,11 +165,10 @@ class SensorsController:
             "last_seen": self.live_stamping.getLiveNodeStampStr(node.sensor_id),
         }
         sensors_json[node.sensor_id] = node_json
-    return sensors_json
+      return sensors_json
 
 
     def getDBInterface(self):
-        if self.sqlconn = sqlite3.connect('example.db')
         if self.mongodb_collection is None:
             self.setup_db_connection()
         return self.mongodb_collection
