@@ -5,8 +5,7 @@ from datetime import datetime, timezone
 import pymongo
 import pickle
 
-from .LiveStamping import LiveStamping
-
+from .LocalPersistence import LocalPersistence
 
 class SensorsController:
     """ Sensors Controller class. It handles all interactions with mysensors """
@@ -18,7 +17,7 @@ class SensorsController:
         else:
             print("Using serial port: " + str(os.environ["MYSENSOR_SERIAL"]))
 
-        self.live_stamping = LiveStamping()
+        self.local_persistence = LocalPersistence()
         self.gateway = None
         self.gateway = mysensors.SerialGateway(
             os.environ["MYSENSOR_SERIAL"],
@@ -40,13 +39,36 @@ class SensorsController:
 
     def event(self, message):
         """Callback for mysensors updates"""
-
         print(message)
         is_valid_node = self.gateway
+        stamp = datetime.now()
+
+        # update node stamp
+        node_update = {"stamp":stamp.strftime("%Y-%m-%d %H:%M:%S")}
 
         if is_valid_node:
-            self.live_stamping.updateNodeStamp(message.node_id)
-            
+            if message.child_id == 255:
+                # Pure node update
+                if message.command == 0:
+                    node_update["type"]=self.getStringPresentation(message.type)
+                if message.command == 3:
+                    if message.type == 11:
+                        node_update["sketch_name"]=message.payload
+                    if message.type == 12:
+                        node_update["sketch_version"]=message.payload
+                    if message.type == 19:
+                        node_update["presentation"]=message.payload
+                    if message.type == 0:
+                        node_update["battery_lvl"]=message.payload
+
+            # update local persistence node
+            self.local_persistence.updateNode(node_update)
+
+            is_node_update_or_req = (
+                message.child_id != 255
+                and message.type in [1, 2]
+                and self.gateway.is_sensor(message.node_id, message.child_id)
+            )
             is_child_update_or_req = (
                 message.child_id != 255
                 and message.type in [1, 2]
@@ -100,8 +122,11 @@ class SensorsController:
 
                 if message.type == 1:
                     print("sensor_updated: {}".format(json.dumps(child_json)))
-                    self.live_stamping.updateChildStamp(message.node_id, message.child_id, child.type)
 
+                    # local last value persistence
+                    self.local_persistence.updateChild(message.node_id, message.child_id, child.type, payload, stamp)
+
+                    # mongo db persistence
                     db_interface = self.getDBInterface()
                     if db_interface is not None:
                         try:
@@ -136,37 +161,7 @@ class SensorsController:
 
     def getSensors(self):
       # List all sensors as JSON
-      node_json = None
-      sensors_json = {}
-      for node in self.getSensorsRaw():
-        child_list = []
-        for ch_id in node.children:
-            child = node.children[ch_id]
-            child_list.append(
-                {
-                    "child_id": ch_id,
-                    "child_type": child.type,
-                    "description": child.description,
-                    "values": child.values,
-                    "last_seen": self.live_stamping.getLiveChildStampStr(
-                        node.sensor_id, ch_id, child.type
-                    ),
-                }
-            )
-
-        node_json = {
-            "sensor_id": node.sensor_id,
-            "sketch_name": node.sketch_name,
-            "sketch_version": node.sketch_version,
-            "battery_level": node.battery_level,
-            "heartbeat": node.heartbeat,
-            "protocol_version": node.protocol_version,
-            "children": child_list,
-            "last_seen": self.live_stamping.getLiveNodeStampStr(node.sensor_id),
-        }
-        sensors_json[node.sensor_id] = node_json
-      return sensors_json
-
+      return self.local_persistence.getSensors()
 
     def getDBInterface(self):
         if self.mongodb_collection is None:
@@ -190,6 +185,21 @@ class SensorsController:
             return True
         else:
             return False
+
+    def getStringPresentation(self, number):
+        if number == 6:
+            return "S_TEMP"
+        else if number == 7:
+            return "S_HUM"
+        else if number == 17:
+            return "S_ARDUINO_NODE"
+        else if number == 18:
+            return "S_ARDUINO_REPEATER_NODE"
+        else if number == 35:
+            return "S_MOISTURE"
+        else:
+            return "unknown"    
+            
 
     def __test_feed_dummy_data(self):
         child_json = {
