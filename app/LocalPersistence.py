@@ -42,13 +42,13 @@ class LocalPersistence:
         if records is not None:
             self.persist(records)
 
-    def getSensors():
+    def getSensors(self):
         records = None
         with open(self.filename, 'rb') as file:
             records = pickle.load(file)
         return records
-        
-    def merge_dicts(x, y):
+
+    def merge_dicts(self, x, y):
         # for python < 3.4
         z = x.copy()   # start with x's keys and values
         z.update(y)    # modifies z with y's keys and values & returns None
