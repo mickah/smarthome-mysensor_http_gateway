@@ -32,6 +32,9 @@ class LocalPersistence:
             records = pickle.load(file)
             if node_id not in records:
                 records[node_id] = { 'children':{}}
+            if 'children' not in records[node_id]:
+                records[node_id]['children'] = {}
+                
             if child_id not in records[node_id]['children']:
                 records[node_id]['children'][child_id] = {
                     child_subtype: {}
